@@ -7,38 +7,45 @@ function initializeVideo() {
     const startVideo = async () => {
         try {
             await banner.play();
-            // Hide overlay if play succeeds
-            clickOverlay.style.display = 'none';
+            // If video autoplays successfully, remove overlay
+            if (clickOverlay) {
+                clickOverlay.remove();
+            }
             console.log("Video started successfully");
         } catch (error) {
             console.log("Autoplay failed, waiting for user interaction:", error);
             
-            // Show the overlay when autoplay fails
-            clickOverlay.style.display = 'block';
-            
-            // Add click handler for both overlay and body
-            const startVideoOnClick = () => {
-                banner.play().catch(console.error);
-                clickOverlay.style.display = 'none';
+            // Show the overlay when autoplay fails (only for first video)
+            if (clickOverlay && banner.querySelector('source').src.includes('no11.mp4')) {
+                clickOverlay.style.display = 'block';
                 
-                // Remove other event handlers once video starts
-                document.body.removeEventListener('click', startVideoOnClick);
-                clickOverlay.removeEventListener('click', startVideoOnClick);
-            };
-            
-            clickOverlay.addEventListener('click', startVideoOnClick);
-            document.body.addEventListener('click', startVideoOnClick, { once: true });
+                // Add click handler to start video and remove overlay
+                const startVideoOnClick = () => {
+                    banner.play().catch(console.error);
+                    clickOverlay.remove(); // Completely remove the overlay
+                    document.body.removeEventListener('click', startVideoOnClick);
+                };
+                
+                clickOverlay.addEventListener('click', startVideoOnClick);
+                document.body.addEventListener('click', startVideoOnClick, { once: true });
+            }
         }
     };
 
     // Start video when it's loaded
     banner.addEventListener('loadeddata', startVideo);
     
-   // Handle video source updates (for subsequent videos)
+    // Handle video source updates (for subsequent videos)
     banner.addEventListener('sourcechange', () => {
         // If it's not the initial video, ensure it's unmuted
         if (!banner.querySelector('source').src.includes('no11.mp4')) {
             banner.muted = false;
+        }
+        
+        // Make sure overlay doesn't show up for subsequent videos
+        const remainingOverlay = document.getElementById('click-overlay');
+        if (remainingOverlay) {
+            remainingOverlay.remove();
         }
     });
 }
