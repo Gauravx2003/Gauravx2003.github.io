@@ -61,7 +61,7 @@ const answers_no = [
     "NO NO NO NO",
     "Yes bhi kar de!!!😒",
     "Jyada hi bhav nhi kha rhi ?? 😠😠",
-    "Aata dab na NO..Dab Dab!! 😠",
+    "Thik hai chal Na to Na hi sahi!!!! 😒",
     "Why are you doing this to me?",
     "Please give me a chance!",
     "I am begging you to stop!",
@@ -70,10 +70,10 @@ const answers_no = [
 
 const tooSoonMessages = [
     "O Come on please, itni jaldi nhi manna hota!! 😒",
-    "You are a girlll....do some nakhrebazi...no daba !! 😏😏",
-    "Wow, Somebody need to be my Valentine ASAP 😊",
+    "You are a girlll....do some nakhrebazi...NO daba !! 😏😏",
+    "Wow, Somebody needs to be my Valentine ASAP 😊",
     "Tharkiii Itni kya jaldi hai YES ki 😉",
-    "Naaa lets play a little !! 💝",
+    "Are thoda manane de na.. !! 💝",
     "Where's the fun in saying yes right away? 🎭"
 ];
 
@@ -84,7 +84,7 @@ const videoSequence = [
     "public/images/no12.mp4",
     "public/images/no9.mp4",
     "public/images/no7.mp4",
-    "public/images/no8.mp4",
+    "public/images/no14.mp4",
     "public/images/no2.mp4",
     "public/images/no3.mp4",
     "public/images/no4.mp4",
