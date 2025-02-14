@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Import Question</title>
+    <link rel="stylesheet" href="./public/css/style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="banner-video">
+        <video id="banner" playsinline loop>
+          <source src="./public/images/no11.mp4" type="video/mp4">
+      </video>
+      </div>
+      <h1 id="question-heading" style="text-align: center;">Will you be my valentine?</h1>
+      <div class="buttons">
+        <button id="yes-button"><p>Yes</p></button>
+        <button id="no-button"><p>No</p></button>
+      </div>
+      <div class="message">
+        <h2 id="success-message">Yepppie, see you sooonnn :3</h2>
+        <h6>Creator: <a class="creator" href="https://github.com/Aayush-683">Aayush683 ;)</a></h6>
+      </div>
+    </div>
+
+    <!-- New success overlay -->
+    <div class="success-overlay" style="display: none;">
+      <div class="hearts-container"></div>
+      <div class="success-content">
+        <h1 class="success-title">Oh My God, You Said Yes, I knew it</h1>
+        <p class="success-text">Do you know what this means..?? ❤️🥰🥰</p>
+        <button id="next-button">Click to know ❤️</button>
+      </div>
+    </div>
+
+    <!-- Full screen video container -->
+    <div class="fullscreen-video-container" style="display: none;">
+      <video id="final-video" controls>
+        <source src="public/images/no13.mp4" type="video/mp4">
+      </video>
+    </div>
+    <script src="./public/js/script.js"></script>
+  </body>
+</html>
