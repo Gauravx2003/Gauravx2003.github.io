@@ -1,34 +1,22 @@
+// Store original video source
+const originalVideoSrc = "./public/images/no11.mp4";
+
 // Initialize video functionality
 function initializeVideo() {
     const banner = document.getElementById('banner');
-    const clickOverlay = document.getElementById('click-overlay');
     
     // Function to handle video loading and playing
     const startVideo = async () => {
         try {
             await banner.play();
-            // If video autoplays successfully, remove overlay
-            if (clickOverlay) {
-                clickOverlay.remove();
-            }
             console.log("Video started successfully");
         } catch (error) {
             console.log("Autoplay failed, waiting for user interaction:", error);
             
-            // Show the overlay when autoplay fails (only for first video)
-            if (clickOverlay && banner.querySelector('source').src.includes('no11.mp4')) {
-                clickOverlay.style.display = 'block';
-                
-                // Add click handler to start video and remove overlay
-                const startVideoOnClick = () => {
-                    banner.play().catch(console.error);
-                    clickOverlay.remove(); // Completely remove the overlay
-                    document.body.removeEventListener('click', startVideoOnClick);
-                };
-                
-                clickOverlay.addEventListener('click', startVideoOnClick);
-                document.body.addEventListener('click', startVideoOnClick, { once: true });
-            }
+            // Add click handler to start video on first user interaction
+            document.body.addEventListener('click', () => {
+                banner.play().catch(console.error);
+            }, { once: true });
         }
     };
 
@@ -40,12 +28,6 @@ function initializeVideo() {
         // If it's not the initial video, ensure it's unmuted
         if (!banner.querySelector('source').src.includes('no11.mp4')) {
             banner.muted = false;
-        }
-        
-        // Make sure overlay doesn't show up for subsequent videos
-        const remainingOverlay = document.getElementById('click-overlay');
-        if (remainingOverlay) {
-            remainingOverlay.remove();
         }
     });
 }
