@@ -135,88 +135,32 @@ function createHearts() {
     }
 }
 
-// Complete rewrite of makeButtonDodge to use the entire viewport
+// Updated makeButtonDodge function to work with or without hover
 function makeButtonDodge(button) {
-    let isMoving = false;
-    
-    // Initial setup
-    button.style.position = 'fixed';  // Use fixed positioning for viewport-level movement
-    button.style.zIndex = '9999';     // Ensure it stays on top
-    
-    // Function to move button to a completely random position on screen
-    function moveToRandomPosition() {
-        if (isMoving) return;
-        isMoving = true;
-        
-        // Get viewport dimensions
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-        const buttonWidth = button.offsetWidth;
-        const buttonHeight = button.offsetHeight;
-        
-        // Ensure button stays within visible area with some padding
-        const padding = 20;
-        const maxX = viewportWidth - buttonWidth - padding;
-        const maxY = viewportHeight - buttonHeight - padding;
-        
-        // Generate new random position
-        const newX = Math.floor(Math.random() * maxX);
-        const newY = Math.floor(Math.random() * maxY);
-        
-        // Apply new position with a small animation
-        button.style.transition = 'transform 0.1s, left 0.3s, top 0.3s';
-        button.style.transform = 'scale(1.1)';
-        button.style.left = `${newX}px`;
-        button.style.top = `${newY}px`;
-        
-        // Reset after animation
-        setTimeout(() => {
-            button.style.transform = 'scale(1)';
-            isMoving = false;
-        }, 300);
-    }
-    
-    // Function to check if cursor is close to button
-    function isCloseToButton(mouseX, mouseY, buttonRect, proximityThreshold = 100) {
-        const buttonCenterX = buttonRect.left + buttonRect.width / 2;
-        const buttonCenterY = buttonRect.top + buttonRect.height / 2;
-        
-        const distance = Math.sqrt(
-            Math.pow(mouseX - buttonCenterX, 2) + 
-            Math.pow(mouseY - buttonCenterY, 2)
-        );
-        
-        return distance <proximityThreshold;
-    }
-    
-    // Track mouse position across the entire document
-    document.addEventListener('mousemove', (e) => {
+    function moveButton() {
+        const container = document.querySelector('.buttons');
+        const containerRect = container.getBoundingClientRect();
         const buttonRect = button.getBoundingClientRect();
         
-        if (isCloseToButton(e.clientX, e.clientY, buttonRect)) {
-            moveToRandomPosition();
-        }
-    });
+        // Calculate safe boundaries
+        const maxX = containerRect.width - buttonRect.width;
+        const maxY = containerRect.height - buttonRect.height;
+        
+        // Generate new position within safe boundaries
+        let newX = Math.random() * maxX;
+        let newY = Math.random() * maxY;
+        
+        button.style.position = 'absolute';
+        button.style.left = `${newX}px`;
+        button.style.top = `${newY}px`;
+    }
     
-    // Ensure button moves on click attempts
-    button.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        moveToRandomPosition();
-        return false;
-    });
+    // Add both hover and click events to ensure button moves
+    button.addEventListener('mouseover', moveButton);
+    button.addEventListener('click', moveButton);
     
-    // Move button on window resize
-    window.addEventListener('resize', moveToRandomPosition);
-    
-    // Initial random position
-    moveToRandomPosition();
-    
-    // Add additional random movements to be extra difficult
-    setInterval(() => {
-        if (Math.random() < 0.1) { // 10% chance of random movement
-            moveToRandomPosition();
-        }
-    }, 1000);
+    // Initial position
+    moveButton();
 }
 
 // Create floating hearts background
