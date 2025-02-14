@@ -3,16 +3,9 @@ function initializeVideo() {
     const banner = document.getElementById('banner');
     const clickOverlay = document.getElementById('click-overlay');
     
-    // Function to handle video loading and playing
-    const startVideo = async () => {
-        try {
-            await banner.play();
-            // If video autoplays successfully, remove overlay
-            if (clickOverlay) {
-                clickOverlay.remove();
-            }
-            console.log("Video started successfully");
-        } catch (error) {
+    // Start video when it's loaded
+    banner.addEventListener('loadeddata', () => {
+        banner.play().catch(error => {
             console.log("Autoplay failed, waiting for user interaction:", error);
             
             // Show the overlay when autoplay fails (only for first video)
@@ -29,24 +22,43 @@ function initializeVideo() {
                 clickOverlay.addEventListener('click', startVideoOnClick);
                 document.body.addEventListener('click', startVideoOnClick, { once: true });
             }
-        }
-    };
-
-    // Start video when it's loaded
-    banner.addEventListener('loadeddata', startVideo);
+        });
+    });
     
-    // Handle video source updates (for subsequent videos)
-    banner.addEventListener('sourcechange', () => {
-        // If it's not the initial video, ensure it's unmuted
-        if (!banner.querySelector('source').src.includes('no11.mp4')) {
-            banner.muted = false;
-        }
+    // Add loading indicator
+    const videoContainer = banner.parentElement;
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.className = 'loading-spinner';
+    loadingIndicator.innerHTML = '<div class="spinner"></div>';
+    videoContainer.appendChild(loadingIndicator);
+    
+    banner.addEventListener('playing', () => {
+        loadingIndicator.style.display = 'none';
+    });
+    
+    banner.addEventListener('waiting', () => {
+        loadingIndicator.style.display = 'block';
+    });
+}
+
+// Preload all videos in sequence
+function preloadVideos() {
+    videoSequence.forEach(url => {
+        const tempVideo = document.createElement('video');
+        tempVideo.src = url;
+        tempVideo.preload = 'auto';
+        tempVideo.muted = true;
+        tempVideo.style.display = 'none';
         
-        // Make sure overlay doesn't show up for subsequent videos
-        const remainingOverlay = document.getElementById('click-overlay');
-        if (remainingOverlay) {
-            remainingOverlay.remove();
-        }
+        // Track loading progress
+        tempVideo.addEventListener('canplaythrough', () => {
+            // Remove temporary element after loading
+            if (document.body.contains(tempVideo)) {
+                document.body.removeChild(tempVideo);
+            }
+        }, { once: true });
+        
+        document.body.appendChild(tempVideo);
     });
 }
 
@@ -102,24 +114,61 @@ function getRandomMessage() {
     return tooSoonMessages[Math.floor(Math.random() * tooSoonMessages.length)];
 }
 
-// Update video
+// Improved video update function
 function updateVideo() {
     const banner = document.getElementById('banner');
     const videoIndex = Math.min(noClicks, videoSequence.length - 1);
-    const videoSource = banner.querySelector('source');
-    videoSource.src = videoSequence[videoIndex];
-    banner.load();
     
-    // Ensure video is unmuted for subsequent videos
-    if (!videoSequence[videoIndex].includes('no11.mp4')) {
-        banner.muted = false;
+    // Create a new video element to replace the old one
+    const newVideo = document.createElement('video');
+    newVideo.id = 'banner';
+    newVideo.className = banner.className;
+    newVideo.autoplay = true;
+    newVideo.loop = banner.loop;
+    newVideo.muted = !videoSequence[videoIndex].includes('no11.mp4') ? false : true;
+    
+    const source = document.createElement('source');
+    source.src = videoSequence[videoIndex];
+    source.type = 'video/mp4';
+    newVideo.appendChild(source);
+    
+    // Copy event listeners
+    const loadingIndicator = banner.parentElement.querySelector('.loading-spinner');
+    
+    newVideo.addEventListener('playing', () => {
+        if (loadingIndicator) loadingIndicator.style.display = 'none';
+    });
+    
+    newVideo.addEventListener('waiting', () => {
+        if (loadingIndicator) loadingIndicator.style.display = 'block';
+    });
+    
+    newVideo.addEventListener('loadeddata', () => {
+        newVideo.play().catch(error => {
+            console.error("Video play failed:", error);
+            // Add a retry mechanism
+            setTimeout(() => {
+                newVideo.play().catch(console.error);
+            }, 300);
+        });
+    });
+    
+    // Replace old video with new one
+    banner.parentNode.replaceChild(newVideo, banner);
+    
+    // Make sure overlay doesn't show up for subsequent videos
+    const remainingOverlay = document.getElementById('click-overlay');
+    if (remainingOverlay) {
+        remainingOverlay.remove();
     }
-    
-    banner.play().catch(console.error);
 }
 
 // Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', initializeVideo);
+document.addEventListener('DOMContentLoaded', () => {
+    initializeVideo();
+    createHeartsBackground();
+    preloadVideos(); // Start preloading all videos
+});
 
 // Function to create floating hearts
 function createHearts() {
@@ -183,18 +232,6 @@ function createFloatingHeart(container) {
     heart.style.animationDelay = `${Math.random() * 15}s`;
     container.appendChild(heart);
 }
-
-// Initialize video and hearts on page load
-document.addEventListener('DOMContentLoaded', () => {
-    createHeartsBackground();
-    
-    const banner = document.getElementById('banner');
-    // Force video load and play
-    banner.load();
-    banner.play().catch(function(error) {
-        console.log("Video autoplay failed:", error);
-    });
-});
 
 // Function to create broken hearts effect
 function createBrokenHearts(clickX, clickY) {
