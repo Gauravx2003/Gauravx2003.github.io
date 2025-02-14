@@ -1,65 +1,116 @@
-// Initialize video functionality
+// Initialize video functionality with more robust error handling
 function initializeVideo() {
     const banner = document.getElementById('banner');
     const clickOverlay = document.getElementById('click-overlay');
-    
-    // Start video when it's loaded
-    banner.addEventListener('loadeddata', () => {
-        banner.play().catch(error => {
-            console.log("Autoplay failed, waiting for user interaction:", error);
-            
-            // Show the overlay when autoplay fails (only for first video)
-            if (clickOverlay && banner.querySelector('source').src.includes('no11.mp4')) {
-                clickOverlay.style.display = 'block';
-                
-                // Add click handler to start video and remove overlay
-                const startVideoOnClick = () => {
-                    banner.play().catch(console.error);
-                    clickOverlay.remove(); // Completely remove the overlay
-                    document.body.removeEventListener('click', startVideoOnClick);
-                };
-                
-                clickOverlay.addEventListener('click', startVideoOnClick);
-                document.body.addEventListener('click', startVideoOnClick, { once: true });
-            }
-        });
-    });
-    
-    // Add loading indicator
     const videoContainer = banner.parentElement;
+    
+    // Create and append loading indicator
     const loadingIndicator = document.createElement('div');
     loadingIndicator.className = 'loading-spinner';
     loadingIndicator.innerHTML = '<div class="spinner"></div>';
     videoContainer.appendChild(loadingIndicator);
     
+    // Function to handle loading and playback with multiple retry attempts
+    const attemptPlayback = (attemptsLeft = 3) => {
+        banner.play().then(() => {
+            // Success - hide loading and overlay
+            loadingIndicator.style.display = 'none';
+            if (clickOverlay) clickOverlay.style.display = 'none';
+        }).catch(error => {
+            console.log(`Playback attempt failed (${attemptsLeft} attempts left):`, error);
+            
+            if (attemptsLeft > 0) {
+                // Retry after a short delay
+                setTimeout(() => attemptPlayback(attemptsLeft - 1), 500);
+            } else {
+                // All attempts failed, show the overlay for user interaction
+                loadingIndicator.style.display = 'none';
+                if (clickOverlay) {
+                    clickOverlay.style.display = 'block';
+                    
+                    // Add click handler to start video
+                    const startVideoOnClick = () => {
+                        loadingIndicator.style.display = 'block';
+                        banner.play().then(() => {
+                            loadingIndicator.style.display = 'none';
+                            clickOverlay.remove();
+                        }).catch(console.error);
+                        document.body.removeEventListener('click', startVideoOnClick);
+                    };
+                    
+                    clickOverlay.addEventListener('click', startVideoOnClick);
+                    document.body.addEventListener('click', startVideoOnClick, { once: true });
+                }
+            }
+        });
+    };
+    
+    // Start playing when video data is loaded
+    banner.addEventListener('loadeddata', () => {
+        loadingIndicator.style.display = 'block';
+        attemptPlayback();
+    });
+    
+    // Handle loading events
+    banner.addEventListener('waiting', () => {
+        loadingIndicator.style.display = 'block';
+    });
+    
     banner.addEventListener('playing', () => {
         loadingIndicator.style.display = 'none';
     });
     
-    banner.addEventListener('waiting', () => {
+    // Handle errors during playback
+    banner.addEventListener('error', (e) => {
+        console.error("Video error:", e);
         loadingIndicator.style.display = 'block';
+        
+        // Try to recover by reloading the video
+        const currentSrc = banner.querySelector('source').src;
+        const source = banner.querySelector('source');
+        source.src = currentSrc;
+        banner.load();
+        attemptPlayback();
     });
 }
 
-// Preload all videos in sequence
+// Improved preloading with sequential loading and progress tracking
 function preloadVideos() {
-    videoSequence.forEach(url => {
+    // Load one video at a time to avoid overwhelming the browser
+    let index = 0;
+    const preloadNext = () => {
+        if (index >= videoSequence.length) return;
+        
         const tempVideo = document.createElement('video');
+        const url = videoSequence[index];
+        
+        tempVideo.addEventListener('canplaythrough', () => {
+            console.log(`Preloaded video ${index + 1}/${videoSequence.length}: ${url}`);
+            if (document.body.contains(tempVideo)) {
+                document.body.removeChild(tempVideo);
+            }
+            index++;
+            preloadNext(); // Load the next video
+        }, { once: true });
+        
+        tempVideo.addEventListener('error', (e) => {
+            console.error(`Error preloading video ${index + 1}/${videoSequence.length}:`, e);
+            if (document.body.contains(tempVideo)) {
+                document.body.removeChild(tempVideo);
+            }
+            index++;
+            preloadNext(); // Try the next video
+        }, { once: true });
+        
         tempVideo.src = url;
         tempVideo.preload = 'auto';
         tempVideo.muted = true;
         tempVideo.style.display = 'none';
-        
-        // Track loading progress
-        tempVideo.addEventListener('canplaythrough', () => {
-            // Remove temporary element after loading
-            if (document.body.contains(tempVideo)) {
-                document.body.removeChild(tempVideo);
-            }
-        }, { once: true });
-        
         document.body.appendChild(tempVideo);
-    });
+    };
+    
+    // Start the sequential preloading
+    preloadNext();
 }
 
 const answers_no = [
@@ -89,7 +140,7 @@ const tooSoonMessages = [
     "Where's the fun in saying yes right away? 🎭"
 ];
 
-// Replace this array with your video paths
+// Define video paths with fallback options
 const videoSequence = [
     "public/images/no10.mp4",
     "public/images/no10.mp4",
@@ -105,6 +156,9 @@ const videoSequence = [
     "public/images/no.mp4"
 ];
 
+// Create a fallback sequence (reusing the first video if others fail)
+const fallbackVideo = "public/images/no10.mp4";
+
 const no_button = document.getElementById('no-button');
 const yes_button = document.getElementById('yes-button');
 let noClicks = 0;
@@ -114,60 +168,106 @@ function getRandomMessage() {
     return tooSoonMessages[Math.floor(Math.random() * tooSoonMessages.length)];
 }
 
-// Improved video update function
+// Enhanced video update function with robust error handling
 function updateVideo() {
-    const banner = document.getElementById('banner');
+    const oldBanner = document.getElementById('banner');
+    const videoContainer = oldBanner.parentElement;
     const videoIndex = Math.min(noClicks, videoSequence.length - 1);
     
-    // Create a new video element to replace the old one
+    // Remove old loading spinner if exists
+    const oldSpinner = videoContainer.querySelector('.loading-spinner');
+    if (oldSpinner) oldSpinner.remove();
+    
+    // Create a new video element with enhanced attributes
     const newVideo = document.createElement('video');
     newVideo.id = 'banner';
-    newVideo.className = banner.className;
+    newVideo.className = oldBanner.className;
     newVideo.autoplay = true;
-    newVideo.loop = banner.loop;
+    newVideo.loop = oldBanner.loop;
+    newVideo.playsinline = true; // Important for iOS
     newVideo.muted = !videoSequence[videoIndex].includes('no11.mp4') ? false : true;
+    newVideo.dataset.currentIndex = videoIndex.toString();
     
+    // Create source element
     const source = document.createElement('source');
     source.src = videoSequence[videoIndex];
     source.type = 'video/mp4';
     newVideo.appendChild(source);
     
-    // Copy event listeners
-    const loadingIndicator = banner.parentElement.querySelector('.loading-spinner');
+    // Create and append new loading indicator
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.className = 'loading-spinner';
+    loadingIndicator.innerHTML = '<div class="spinner"></div>';
     
-    newVideo.addEventListener('playing', () => {
-        if (loadingIndicator) loadingIndicator.style.display = 'none';
+    // Replace old video and add spinner to container
+    oldBanner.parentNode.replaceChild(newVideo, oldBanner);
+    videoContainer.appendChild(loadingIndicator);
+    
+    // Function to attempt playback with retries
+    const attemptPlayback = (attempts = 3) => {
+        loadingIndicator.style.display = 'block';
+        
+        newVideo.play().then(() => {
+            loadingIndicator.style.display = 'none';
+        }).catch(error => {
+            console.error(`Play attempt failed (${attempts} left):`, error);
+            
+            if (attempts > 0) {
+                setTimeout(() => attemptPlayback(attempts - 1), 500);
+            } else {
+                // If all attempts fail, try the fallback video
+                if (source.src !== fallbackVideo) {
+                    console.log("Switching to fallback video");
+                    source.src = fallbackVideo;
+                    newVideo.load();
+                    attemptPlayback(2);
+                } else {
+                    loadingIndicator.style.display = 'none';
+                    console.error("All playback attempts failed");
+                }
+            }
+        });
+    };
+    
+    // Add event listeners
+    newVideo.addEventListener('loadeddata', () => {
+        attemptPlayback();
     });
     
     newVideo.addEventListener('waiting', () => {
-        if (loadingIndicator) loadingIndicator.style.display = 'block';
+        loadingIndicator.style.display = 'block';
     });
     
-    newVideo.addEventListener('loadeddata', () => {
-        newVideo.play().catch(error => {
-            console.error("Video play failed:", error);
-            // Add a retry mechanism
-            setTimeout(() => {
-                newVideo.play().catch(console.error);
-            }, 300);
-        });
+    newVideo.addEventListener('playing', () => {
+        loadingIndicator.style.display = 'none';
     });
     
-    // Replace old video with new one
-    banner.parentNode.replaceChild(newVideo, banner);
+    newVideo.addEventListener('error', (e) => {
+        console.error("Video error:", e);
+        // Try fallback if not already using it
+        if (source.src !== fallbackVideo) {
+            source.src = fallbackVideo;
+            newVideo.load();
+        }
+    });
     
     // Make sure overlay doesn't show up for subsequent videos
     const remainingOverlay = document.getElementById('click-overlay');
     if (remainingOverlay) {
         remainingOverlay.remove();
     }
+    
+    // Start loading
+    newVideo.load();
 }
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     initializeVideo();
     createHeartsBackground();
-    preloadVideos(); // Start preloading all videos
+    
+    // Delay preloading to not compete with initial video
+    setTimeout(preloadVideos, 2000);
 });
 
 // Function to create floating hearts
@@ -339,8 +439,18 @@ document.getElementById('next-button').addEventListener('click', () => {
     // Hide success overlay
     successOverlay.style.display = 'none';
     
-    // Show and play final video
+    // Show and play final video with multiple retry attempts
     videoContainer.style.display = 'block';
     const finalVideo = document.getElementById('final-video');
-    finalVideo.play();
+    
+    const playFinalVideo = (attempts = 3) => {
+        finalVideo.play().catch(error => {
+            console.error(`Final video play failed (${attempts} left):`, error);
+            if (attempts > 0) {
+                setTimeout(() => playFinalVideo(attempts - 1), 500);
+            }
+        });
+    };
+    
+    playFinalVideo();
 });
