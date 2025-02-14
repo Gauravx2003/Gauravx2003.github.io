@@ -186,7 +186,7 @@ function makeButtonDodge(button) {
             Math.pow(mouseY - buttonCenterY, 2)
         );
         
-        return distance < proximityThreshold;
+        return distance <proximityThreshold;
     }
     
     // Track mouse position across the entire document
@@ -213,36 +213,10 @@ function makeButtonDodge(button) {
     
     // Add additional random movements to be extra difficult
     setInterval(() => {
-        if (Math.random() <0.1) { // 10% chance of random movement
+        if (Math.random() < 0.1) { // 10% chance of random movement
             moveToRandomPosition();
         }
     }, 1000);
-}
-
-    // Track mouse position
-    container.addEventListener('mousemove', (e) => {
-        lastMouseX = e.clientX;
-        lastMouseY = e.clientY;
-        
-        const buttonRect = button.getBoundingClientRect();
-        
-        if (isCloseToButton(e.clientX, e.clientY, buttonRect)) {
-            moveButtonAway(e.clientX, e.clientY);
-        }
-    });
-
-    // Add click event to ensure button moves
-    button.addEventListener('click', (e) => {
-        moveButtonAway(e.clientX, e.clientY);
-    });
-    
-    // Initial random position
-    const initialX = Math.random() * (container.offsetWidth - button.offsetWidth);
-    const initialY = Math.random() * (container.offsetHeight - button.offsetHeight);
-    
-    button.style.position = 'absolute';
-    button.style.left = `${initialX}px`;
-    button.style.top = `${initialY}px`;
 }
 
 // Create floating hearts background
