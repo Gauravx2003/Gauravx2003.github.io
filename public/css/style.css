@@ -110,6 +110,7 @@ body {
 
 /* Modify existing banner-video styles */
 .banner-video {
+    position: relative;
     width: 100%;
     display: flex;
     justify-content: center;
@@ -124,6 +125,29 @@ body {
     border-radius: 15px;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
     object-fit: cover;
+}
+
+#click-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  padding: 15px 30px;
+  border-radius: 50px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 10;
+  animation: pulse 2s infinite;
+  display: none; /* Initially hidden */
+}
+
+@keyframes pulse {
+  0% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.1); }
+  100% { transform: translate(-50%, -50%) scale(1); }
 }
 
 /* ... (rest of the CSS remains the same) ... */
