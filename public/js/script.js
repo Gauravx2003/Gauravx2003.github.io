@@ -1,29 +1,40 @@
-// Store original video source
-const originalVideoSrc = "./public/images/no11.mp4";
-
 // Initialize video functionality
 function initializeVideo() {
     const banner = document.getElementById('banner');
+    const clickOverlay = document.getElementById('click-overlay');
     
     // Function to handle video loading and playing
     const startVideo = async () => {
         try {
             await banner.play();
+            // Hide overlay if play succeeds
+            clickOverlay.style.display = 'none';
             console.log("Video started successfully");
         } catch (error) {
             console.log("Autoplay failed, waiting for user interaction:", error);
             
-            // Add click handler to start video on first user interaction
-            document.body.addEventListener('click', () => {
+            // Show the overlay when autoplay fails
+            clickOverlay.style.display = 'block';
+            
+            // Add click handler for both overlay and body
+            const startVideoOnClick = () => {
                 banner.play().catch(console.error);
-            }, { once: true });
+                clickOverlay.style.display = 'none';
+                
+                // Remove other event handlers once video starts
+                document.body.removeEventListener('click', startVideoOnClick);
+                clickOverlay.removeEventListener('click', startVideoOnClick);
+            };
+            
+            clickOverlay.addEventListener('click', startVideoOnClick);
+            document.body.addEventListener('click', startVideoOnClick, { once: true });
         }
     };
 
     // Start video when it's loaded
     banner.addEventListener('loadeddata', startVideo);
     
-    // Handle video source updates (for subsequent videos)
+   // Handle video source updates (for subsequent videos)
     banner.addEventListener('sourcechange', () => {
         // If it's not the initial video, ensure it's unmuted
         if (!banner.querySelector('source').src.includes('no11.mp4')) {
