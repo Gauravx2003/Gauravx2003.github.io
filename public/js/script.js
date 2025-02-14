@@ -84,7 +84,7 @@ const videoSequence = [
     "public/images/no12.mp4",
     "public/images/no9.mp4",
     "public/images/no14.mp4",
-    "public/images/no1.mp4",
+    "public/images/no8.mp4",
     "public/images/no2.mp4",
     "public/images/no3.mp4",
     "public/images/no4.mp4",
