@@ -135,12 +135,46 @@ function createHearts() {
     }
 }
 
-// Updated makeButtonDodge function with proximity detection and improved evasion
+// Complete rewrite of makeButtonDodge to use the entire viewport
 function makeButtonDodge(button) {
-    const container = document.querySelector('.buttons');
     let isMoving = false;
-    let lastMouseX = 0;
-    let lastMouseY = 0;
+    
+    // Initial setup
+    button.style.position = 'fixed';  // Use fixed positioning for viewport-level movement
+    button.style.zIndex = '9999';     // Ensure it stays on top
+    
+    // Function to move button to a completely random position on screen
+    function moveToRandomPosition() {
+        if (isMoving) return;
+        isMoving = true;
+        
+        // Get viewport dimensions
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const buttonWidth = button.offsetWidth;
+        const buttonHeight = button.offsetHeight;
+        
+        // Ensure button stays within visible area with some padding
+        const padding = 20;
+        const maxX = viewportWidth - buttonWidth - padding;
+        const maxY = viewportHeight - buttonHeight - padding;
+        
+        // Generate new random position
+        const newX = Math.floor(Math.random() * maxX);
+        const newY = Math.floor(Math.random() * maxY);
+        
+        // Apply new position with a small animation
+        button.style.transition = 'transform 0.1s, left 0.3s, top 0.3s';
+        button.style.transform = 'scale(1.1)';
+        button.style.left = `${newX}px`;
+        button.style.top = `${newY}px`;
+        
+        // Reset after animation
+        setTimeout(() => {
+            button.style.transform = 'scale(1)';
+            isMoving = false;
+        }, 300);
+    }
     
     // Function to check if cursor is close to button
     function isCloseToButton(mouseX, mouseY, buttonRect, proximityThreshold = 100) {
@@ -154,61 +188,36 @@ function makeButtonDodge(button) {
         
         return distance < proximityThreshold;
     }
-
-      // Function to move button away from cursor
-    function moveButtonAway(mouseX, mouseY) {
-        if (isMoving) return;
-        isMoving = true;
-        
-        const containerRect = container.getBoundingClientRect();
+    
+    // Track mouse position across the entire document
+    document.addEventListener('mousemove', (e) => {
         const buttonRect = button.getBoundingClientRect();
         
-        // Calculate safe boundaries
-        const maxX = containerRect.width - buttonRect.width;
-        const maxY = containerRect.height - buttonRect.height;
-        
-        // Calculate vector away from mouse
-        const buttonCenterX = buttonRect.left - containerRect.left + buttonRect.width / 2;
-        const buttonCenterY = buttonRect.top - containerRect.top + buttonRect.height / 2;
-        
-        // Vector from mouse to button
-        let vectorX = buttonCenterX - (mouseX - containerRect.left);
-        let vectorY = buttonCenterY - (mouseY - containerRect.top);
-        
-        // Normalize and scale the vector
-        const magnitude = Math.sqrt(vectorX * vectorX + vectorY * vectorY);
-        if (magnitude > 0) {
-            vectorX = (vectorX / magnitude) * (100 + Math.random() * 100);
-            vectorY = (vectorY / magnitude) * (100 + Math.random() * 100);
+        if (isCloseToButton(e.clientX, e.clientY, buttonRect)) {
+            moveToRandomPosition();
         }
-        
-        // Add some randomness
-        vectorX += (Math.random() - 0.5) * 150;
-        vectorY += (Math.random() - 0.5) * 150;
-        
-        // Calculate new position
-        let newX = buttonCenterX + vectorX - buttonRect.width / 2;
-        let newY = buttonCenterY + vectorY - buttonRect.height / 2;
-        
-        // Ensure within boundaries
-        newX = Math.max(0, Math.min(newX, maxX));
-        newY = Math.max(0, Math.min(newY, maxY));
-        
-        // Apply new position with transition
-        button.style.position = 'absolute';
-        button.style.transition = 'transform 0.2s ease-out';
-        button.style.transform = 'scale(1.1)'; // Slight pop effect
-        
-        button.style.left = `${newX}px`;
-        button.style.top = `${newY}px`;
-        
-        // Reset transition and scale after movement
-        setTimeout(() => {
-            button.style.transition = 'transform 0.1s ease-in';
-            button.style.transform = 'scale(1)';
-            isMoving = false;
-        }, 300);
-    }
+    });
+    
+    // Ensure button moves on click attempts
+    button.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        moveToRandomPosition();
+        return false;
+    });
+    
+    // Move button on window resize
+    window.addEventListener('resize', moveToRandomPosition);
+    
+    // Initial random position
+    moveToRandomPosition();
+    
+    // Add additional random movements to be extra difficult
+    setInterval(() => {
+        if (Math.random() <0.1) { // 10% chance of random movement
+            moveToRandomPosition();
+        }
+    }, 1000);
+}
 
     // Track mouse position
     container.addEventListener('mousemove', (e) => {
