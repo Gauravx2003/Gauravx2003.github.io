@@ -141,6 +141,7 @@ body {
   cursor: pointer;
   z-index: 10;
   animation: pulse 2s infinite;
+  display: none; /* Initially hidden */
 }
 
 @keyframes pulse {
