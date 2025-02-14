@@ -135,10 +135,31 @@ function createHearts() {
     }
 }
 
-// Updated makeButtonDodge function to work with or without hover
+// Updated makeButtonDodge function with proximity detection and improved evasion
 function makeButtonDodge(button) {
-    function moveButton() {
-        const container = document.querySelector('.buttons');
+    const container = document.querySelector('.buttons');
+    let isMoving = false;
+    let lastMouseX = 0;
+    let lastMouseY = 0;
+    
+    // Function to check if cursor is close to button
+    function isCloseToButton(mouseX, mouseY, buttonRect, proximityThreshold = 100) {
+        const buttonCenterX = buttonRect.left + buttonRect.width / 2;
+        const buttonCenterY = buttonRect.top + buttonRect.height / 2;
+        
+        const distance = Math.sqrt(
+            Math.pow(mouseX - buttonCenterX, 2) + 
+            Math.pow(mouseY - buttonCenterY, 2)
+        );
+        
+        return distance < proximityThreshold;
+    }
+
+      // Function to move button away from cursor
+    function moveButtonAway(mouseX, mouseY) {
+        if (isMoving) return;
+        isMoving = true;
+        
         const containerRect = container.getBoundingClientRect();
         const buttonRect = button.getBoundingClientRect();
         
@@ -146,21 +167,73 @@ function makeButtonDodge(button) {
         const maxX = containerRect.width - buttonRect.width;
         const maxY = containerRect.height - buttonRect.height;
         
-        // Generate new position within safe boundaries
-        let newX = Math.random() * maxX;
-        let newY = Math.random() * maxY;
+        // Calculate vector away from mouse
+        const buttonCenterX = buttonRect.left - containerRect.left + buttonRect.width / 2;
+        const buttonCenterY = buttonRect.top - containerRect.top + buttonRect.height / 2;
         
+        // Vector from mouse to button
+        let vectorX = buttonCenterX - (mouseX - containerRect.left);
+        let vectorY = buttonCenterY - (mouseY - containerRect.top);
+        
+        // Normalize and scale the vector
+        const magnitude = Math.sqrt(vectorX * vectorX + vectorY * vectorY);
+        if (magnitude > 0) {
+            vectorX = (vectorX / magnitude) * (100 + Math.random() * 100);
+            vectorY = (vectorY / magnitude) * (100 + Math.random() * 100);
+        }
+        
+        // Add some randomness
+        vectorX += (Math.random() - 0.5) * 150;
+        vectorY += (Math.random() - 0.5) * 150;
+        
+        // Calculate new position
+        let newX = buttonCenterX + vectorX - buttonRect.width / 2;
+        let newY = buttonCenterY + vectorY - buttonRect.height / 2;
+        
+        // Ensure within boundaries
+        newX = Math.max(0, Math.min(newX, maxX));
+        newY = Math.max(0, Math.min(newY, maxY));
+        
+        // Apply new position with transition
         button.style.position = 'absolute';
+        button.style.transition = 'transform 0.2s ease-out';
+        button.style.transform = 'scale(1.1)'; // Slight pop effect
+        
         button.style.left = `${newX}px`;
         button.style.top = `${newY}px`;
+        
+        // Reset transition and scale after movement
+        setTimeout(() => {
+            button.style.transition = 'transform 0.1s ease-in';
+            button.style.transform = 'scale(1)';
+            isMoving = false;
+        }, 300);
     }
+
+    // Track mouse position
+    container.addEventListener('mousemove', (e) => {
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+        
+        const buttonRect = button.getBoundingClientRect();
+        
+        if (isCloseToButton(e.clientX, e.clientY, buttonRect)) {
+            moveButtonAway(e.clientX, e.clientY);
+        }
+    });
+
+    // Add click event to ensure button moves
+    button.addEventListener('click', (e) => {
+        moveButtonAway(e.clientX, e.clientY);
+    });
     
-    // Add both hover and click events to ensure button moves
-    button.addEventListener('mouseover', moveButton);
-    button.addEventListener('click', moveButton);
+    // Initial random position
+    const initialX = Math.random() * (container.offsetWidth - button.offsetWidth);
+    const initialY = Math.random() * (container.offsetHeight - button.offsetHeight);
     
-    // Initial position
-    moveButton();
+    button.style.position = 'absolute';
+    button.style.left = `${initialX}px`;
+    button.style.top = `${initialY}px`;
 }
 
 // Create floating hearts background
