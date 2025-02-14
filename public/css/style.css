@@ -110,7 +110,6 @@ body {
 
 /* Modify existing banner-video styles */
 .banner-video {
-    position: relative; /* Add this */
     width: 100%;
     display: flex;
     justify-content: center;
@@ -125,13 +124,6 @@ body {
     border-radius: 15px;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
     object-fit: cover;
-}
-
-
-@keyframes pulse {
-  0% { transform: translate(-50%, -50%) scale(1); }
-  50% { transform: translate(-50%, -50%) scale(1.1); }
-  100% { transform: translate(-50%, -50%) scale(1); }
 }
 
 /* ... (rest of the CSS remains the same) ... */
